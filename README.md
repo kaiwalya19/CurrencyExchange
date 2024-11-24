@@ -1,5 +1,5 @@
 
-# Nucoro Backend Test Project
+# Prject Currency Exchange
 
 ## Setup Instructions
 
@@ -25,7 +25,7 @@
 
 ## Features
 - Currency and Exchange Rate management.
-- Dynamic provider integration (CurrencyBeacon and Mock).
+- Dynamic provider integration (CurrencyBeacon).
 - REST APIs for CRUD, conversion, and historical data.
 - Asynchronous task setup (requires Celery).
 
