@@ -1,5 +1,5 @@
 
-# Prject Currency Exchange
+# Project Currency Exchange
 
 ## Setup Instructions
 
