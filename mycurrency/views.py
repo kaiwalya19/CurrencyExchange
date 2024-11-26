@@ -8,6 +8,7 @@ import datetime
 from .serializers import CurrencySerializer
 from .adapters import CurrencyBeaconProvider
 from decimal import Decimal
+from django.core.cache import cache
 
 # Currency List & Create View
 class CurrencyListCreateView(generics.ListCreateAPIView):
@@ -38,41 +39,22 @@ class CurrencyConvertView(APIView):
     def get(self, request):
         source_currency = request.query_params.get('source_currency')
         target_currency = request.query_params.get('target_currency')
-        amount = Decimal(request.query_params.get('amount', 1))  # Convert amount to Decimal
+        amount = float(request.query_params.get('amount', 0))
 
-        # Check if the rate exists in the database
+        cache_key = f"conversion-{source_currency}-{target_currency}-{amount}"
+        cached_result = cache.get(cache_key)
+        if cached_result:
+            return Response(cached_result)
+
         rate = CurrencyExchangeRate.objects.filter(
             source_currency__code=source_currency,
             exchanged_currency__code=target_currency
         ).order_by('-valuation_date').first()
 
-        if rate:
-            # Use the rate from the database
-            converted_amount = amount * rate.rate_value
-            return Response({
-                'rate': rate.rate_value,
-                'converted_amount': converted_amount
-            })
-        else:
-            # Fallback to external provider
-            provider = CurrencyBeaconProvider()
-            external_rate = provider.get_exchange_rate_data(
-                source_currency, target_currency
-            )
-            if external_rate:
-                # Use the external rate and optionally save it in the database
-                rate_value = Decimal(external_rate['rate_value'])  # Ensure rate is Decimal
-                CurrencyExchangeRate.objects.create(
-                    source_currency=Currency.objects.get(code=source_currency),
-                    exchanged_currency=Currency.objects.get(code=target_currency),
-                    valuation_date=datetime.date.today(),
-                    rate_value=rate_value
-                )
-                converted_amount = amount * rate_value
-                return Response({
-                    'rate': rate_value,
-                    'converted_amount': converted_amount
-                })
-            else:
-                # Return an error if no rate is found
-                return Response({'error': 'Exchange rate not found'}, status=404)
+        if not rate:
+            return Response({"error": "Exchange rate not found."}, status=404)
+
+        converted_amount = amount * float(rate.rate_value)
+        result = {"converted_amount": converted_amount}
+        cache.set(cache_key, result, timeout=3600)
+        return Response(result)
