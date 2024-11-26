@@ -35,6 +35,7 @@ DATABASES = {
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 STATIC_URL = '/static/'
+STATIC_ROOT = '/app/staticfiles'
 CURRENCYBEACON_API_KEY = os.getenv('CURRENCYBEACON_API_KEY', 'your-default-key')
 
 
@@ -73,9 +74,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #print(f"CURRENCYBEACON_API_KEY: {CURRENCYBEACON_API_KEY}")
 WSGI_APPLICATION = 'mycurrency.wsgi.application'
 
-# local testing
+
+# Redis Caching Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://redis_broker:6379/1',
+    }
+}
+
+# Celery Configuration
 CELERY_BROKER_URL = 'redis://redis_broker:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis_broker:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-
-
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4
